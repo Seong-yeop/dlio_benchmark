@@ -29,6 +29,9 @@ from src.common.enumerations import FrameworkType, Profiler, FormatType, Dataset
 import tensorflow as tf
 from tensorflow.python.framework import errors
 
+import src.storage.wrapper_db as wrapper_db
+
+
 tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
 
 class TFFramework(Framework):
@@ -87,7 +90,10 @@ class TFFramework(Framework):
             index_file = os.path.join(self.checkpoint_folder, f"index-{epoch}-{step_number}.bin")
 
             string_val = "x" * self.args.model_size 
-            self.storage.put_data(model_file, string_val)
+            #self.storage.put_data(model_file, string_val)
+            db = wrapper_db.DbWrapper.get_instance()
+            db.db_checkpoint(model_file, string_val)
+
             # TODO Should these scale with the model size?
             string_val = "x" * (17371)
             self.storage.put_data(index_file, string_val)
