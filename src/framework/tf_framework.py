@@ -92,7 +92,7 @@ class TFFramework(Framework):
             string_val = "x" * self.args.model_size 
             #self.storage.put_data(model_file, string_val)
             db = wrapper_db.DbWrapper.get_instance()
-            db.db_checkpoint(model_file, string_val)
+            db.db_checkpoint(f"model-{epoch}-{step_number}", string_val)
 
             # TODO Should these scale with the model size?
             string_val = "x" * (17371)

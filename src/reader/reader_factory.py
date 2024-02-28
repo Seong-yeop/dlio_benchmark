@@ -54,6 +54,9 @@ class ReaderFactory(object):
             from src.reader.torch_data_loader_reader import TorchDataLoaderReader
             return TorchDataLoaderReader(dataset_type)
         # Implement other data loader here
+        elif data_loader == DataLoaderType.DB:
+            from src.reader.db_reader import DBReader
+            return DBReader(dataset_type)
         else:
             print("Data Loader %s is not implemented" %data_loader)
             raise Exception(str(ErrorCodes.EC1004))

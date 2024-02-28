@@ -22,13 +22,17 @@ import tensorflow as tf
 from src.utils.utility import progress, utcnow
 from shutil import copyfile
 
+
+
 import logging
+
 class TFRecordGenerator(DataGenerator):
     """
     Generator for creating data in TFRecord format.
     """
     def __init__(self):
         super().__init__()
+
     def generate(self):
         """
         Generator for creating data in TFRecord format of 3d dataset.
@@ -65,4 +69,5 @@ class TFRecordGenerator(DataGenerator):
                     serialized = example.SerializeToString()
                     # Write the serialized data to the TFRecords file.
                     writer.write(serialized)
+               
         random.seed()

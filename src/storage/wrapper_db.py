@@ -27,18 +27,24 @@ class DbHandle(ctypes.Structure):
 
 # Load the shared library
 rocksdb_lib = ctypes.CDLL('/home/csl/testbed/rocksdb/librocksdb.so')  
-multi_lib = ctypes.CDLL('/home/csl/testbed/multi-node-Dotori/bench/build_rocks/libmulti_rocksdb.so')  
+multi_lib = ctypes.CDLL('/home/csl/testbed/new-multi-node-Dotori/bench/rocksdb_test/libmulti_rocksdb.so')  
+#multi_lib = ctypes.CDLL('/home/csl/testbed/new-multi-node-Dotori/bench/dotori_test/libmulti_dotori.so')  
+
 libc = ctypes.CDLL('libc.so.6')  
 
 create_consistent_hasing_func = multi_lib.create_consistent_hashing
 create_consistent_hasing_func.argtypes = [ctypes.c_int]
 create_consistent_hasing_func.restype = ctypes.POINTER(ConsistentHashingWrapper)
 
+
+
 class DbWrapper:
     __instance = None
-    handle = None
 
     def __init__(self):
+        self.handle = None
+        self.dataset_key = []
+
         if DbWrapper.__instance != None:
             raise Exception("This class is a singleton!")
         else:
@@ -50,7 +56,7 @@ class DbWrapper:
             DbWrapper()
         return DbWrapper.__instance
 
-    def db_init(self, num_nodes, db_name="RocksDB", file_path="test_simple_dir/rocks/node"):
+    def db_init(self, num_nodes, db_name="rocksdb", file_path="test_simple_dir/rocks/node"):
         dbname = db_name
         filename = file_path
         c_filename = ctypes.c_char_p(filename.encode('utf-8'))
@@ -68,7 +74,7 @@ class DbWrapper:
         self.handle.ch = consistent_hash.contents.instance
         multi_lib.couchstore_open_multiple_dbs(c_filename, 1, ctypes.byref(self.handle))
         #print("open multiple dbs done")
-
+    
     def db_close(self):
         multi_lib.couchstore_close_multiple_dbs(ctypes.byref(self.handle))
 
@@ -77,7 +83,9 @@ class DbWrapper:
         size = len(data)//bs + 1
         docs = (Doc * size)()
         for i in range(size-1):
-            key = f"{uri}-{i}"
+            # key = f"{uri}-{i}"
+            key = f"{i}"
+
             docs[i].id.buf = ctypes.c_char_p(key.encode('utf-8'))
             docs[i].id.size = len(key)
             
@@ -86,22 +94,42 @@ class DbWrapper:
             docs[i].data.size = len(value)
 
             multi_lib.couchstore_save_document_to_nodes(ctypes.byref(self.handle), ctypes.byref(docs[i]), None, 0)
-        '''
-        logging.info(f"Checkpointing {uri}")
-        batch_size = 32
-        docs = (Doc * batch_size)()
 
-        for i in range(batch_size):
-            key = f"key{i}"
-            docs[i].id.buf = ctypes.c_char_p(key.encode('utf-8'))
-            docs[i].id.size = len(key)
-            value = f"value{i}"
-            docs[i].data.buf = ctypes.c_char_p(value.encode('utf-8'))
-            docs[i].data.size = len(value) 
+    def db_write(self, uri, data):
+        docs = (Doc)()
 
-            multi_lib.couchstore_save_document_to_nodes(ctypes.byref(self.handle), ctypes.byref(docs[i]), None, 0)
-        '''
+        key = f"{uri}"
+        docs.id.buf = ctypes.c_char_p(key.encode('utf-8'))
+        docs.id.size = len(key)
+            
+
+        docs.data.buf = data
+        docs.data.size = len(data)
+        # print("[write] key: ", docs.id.buf, "value len: ", docs.data.size)
         
+        multi_lib.couchstore_save_document_to_nodes(ctypes.byref(self.handle), ctypes.byref(docs), None, 0)
+        self.dataset_key.append(key)
+        multi_lib.couchstore_commit_nodes(ctypes.byref(self.handle))
+
+    def db_read(self, uri, dataset):
+        rq_doc = ctypes.POINTER(Doc)()
+        key = f"{uri}"
+        rq_id = SizedBuf()
+        rq_id.buf = ctypes.c_char_p(key.encode('utf-8'))
+        rq_id.size = len(key)
+
+        multi_lib.couchstore_open_document_from_nodes(ctypes.byref(self.handle), rq_id.buf, rq_id.size, ctypes.byref(rq_doc), 0)
+
+        dataset.append(rq_doc.contents.data.buf)
+        # dataset.append(ctypes.string_at(rq_doc.contents.data.buf,rq_doc.contents.data.size).decode('utf-8'))
+        # print("[read] key: ", rq_id.buf, "value len: ", rq_doc.contents.data.size)
+        rq_doc.contents.id.buf = None
+        multi_lib.couchstore_free_document(rq_doc)
+
+        return rq_doc.contents.data.size
+
+
+
 if __name__ == "__main__":
     dbname = "RocksDB"
     filename = "test_simple_dir/rocks/node"

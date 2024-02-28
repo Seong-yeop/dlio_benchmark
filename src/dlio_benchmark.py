@@ -121,7 +121,6 @@ class DLIOBenchmark(object):
         self.computation_time_stdev = self.args.computation_time_stdev
 
 
-
         if self.do_profiling:
             self.profiler = ProfilerFactory().get_profiler(self.args.profiler)
 
@@ -285,7 +284,9 @@ class DLIOBenchmark(object):
                 self.next_checkpoint_step = self.steps_between_checkpoints                
                 self.stats.start_train(epoch)
                 # Initialize the dataset
+                self.stats.start_read(epoch)
                 self.framework.get_reader(dataset_type=DatasetType.TRAIN).read(epoch)
+                self.stats.end_read(epoch, self.framework.get_reader(DatasetType.TRAIN).db_read_total)
                 steps = self._train(epoch)
                 self.stats.end_train(epoch, steps)
                 logging.debug(f"{utcnow()} Rank {self.my_rank} returned after {steps} steps.")

@@ -90,6 +90,7 @@ class FormatType(Enum):
     HDF5_OPT = 'hdf5_opt'
     JPEG = 'jpeg'
     PNG = 'png'
+    DB = 'db'
 
     def __str__(self):
         return self.value
@@ -100,6 +101,7 @@ class DataLoaderType(Enum):
     """
     TENSORFLOW='tensorflow'
     PYTORCH='pytorch'
+    DB='db'
     NONE='none'
     
     def __str__(self):

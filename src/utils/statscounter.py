@@ -38,6 +38,10 @@ class StatsCounter(object):
         self.record_size = self.args.record_length
         self.batch_size = self.args.batch_size
         self.batch_size_eval = self.args.batch_size_eval
+        self.checkpoint_time = 0
+        self.checkpoint_epoch = 0
+        self.read_total = 0
+        self.read_time = 0
         self.summary = {}
         self.summary['model'] = self.args.model
         self.summary['start'] = utcnow()
@@ -107,7 +111,14 @@ class StatsCounter(object):
                 self.summary['metric']['eval_io_stdev_MB_per_second'] = np.std(eval_throughput)*self.record_size/1024./1024.
             if self.my_rank==0:
                 logging.info(f"{utcnow()} Saved outputs in {self.output_folder}")   
-                metric="Averaged metric over all epochs\n[METRIC] ==========================================================\n"
+                metric = "Averaged metric over all epochs\n[METRIC] ==========================================================\n"
+                metric = metric + f"[METRIC] Model Size (GiB): {(self.args.model_size / 1024 / 1024 / 1024)}\n"
+                metric = metric + f"[METRIC] Checkpoint Total Time (second): {self.checkpoint_time}\n"
+                metric = metric + f"[METRIC] Checkpointing Throughput (GiB/second): {(self.args.model_size / 1024 / 1024 / 1024) / (self.checkpoint_time / self.checkpoint_epoch)}\n"
+                metric = metric + f"[METRIC] Read Total Size (GiB): {self.read_total/1024/1024/1024}\n"
+                metric = metric + f"[METRIC] Read Total Time (second): {self.read_time}\n"
+                metric = metric + f"[METRIC] Read Throughput (GiB/second): {self.read_total/1024/1024/1024/(self.read_time)}\n"
+                metric = metric + f"==========================================================\n"
                 metric = metric + f"[METRIC] Training Accelerator Utilization [AU] (%): {np.mean(train_au):.4f} ({np.std(train_au):.4f})\n"
                 metric = metric + f"[METRIC] Training Throughput (samples/second): {np.mean(train_throughput):.4f} ({np.std(train_throughput):.4f})\n"
                 metric = metric + f"[METRIC] Training I/O Throughput (MB/second): {np.mean(train_throughput)*self.record_size/1024/1024:.4f} ({np.std(train_throughput)*self.record_size/1024/1024:.4f})\n"
@@ -216,6 +227,22 @@ class StatsCounter(object):
             logging.info(f"{utcnow()} Epoch {epoch} - Block {block} [Training] Accelerator Utilization [AU] (%): {self.output[epoch]['au'][f'block{block}']:.4f}")
             logging.info(f"{utcnow()} Epoch {epoch} - Block {block} [Training] Throughput (samples/second): {self.output[epoch]['throughput'][f'block{block}']*self.comm_size:.4f}")
 
+    def start_read(self, epoch):
+        ts = utcnow()
+        self.per_epoch_stats[epoch][f'read'] = {
+            f'{self.my_rank}_start': ts
+        }
+
+    def end_read(self, epoch, read_total):
+        ts = utcnow()
+        duration = pd.to_datetime(ts) - pd.to_datetime(self.per_epoch_stats[epoch][f'read'][f'{self.my_rank}_start'])
+        self.read_time += duration.total_seconds()
+        duration = '{:.2f}'.format(duration.total_seconds())
+
+        self.per_epoch_stats[epoch][f'read'][f'{self.my_rank}_end'] = ts
+        self.per_epoch_stats[epoch][f'read'][f'{self.my_rank}_duration'] = duration
+        self.read_total += read_total
+
     def start_ckpt(self, epoch, block, steps_taken):
         if self.my_rank == 0:
             ts = utcnow()
@@ -228,11 +255,13 @@ class StatsCounter(object):
         if self.my_rank == 0:
             ts = utcnow()
             duration = pd.to_datetime(ts) - pd.to_datetime(self.per_epoch_stats[epoch][f'ckpt{block}']['start'])
+            self.checkpoint_time += duration.total_seconds() 
             duration = '{:.2f}'.format(duration.total_seconds())
             logging.info(f"{ts} Ending checkpoint {block} for epoch {epoch}")
 
             self.per_epoch_stats[epoch][f'ckpt{block}']['end'] = ts
             self.per_epoch_stats[epoch][f'ckpt{block}']['duration'] = duration
+            self.checkpoint_epoch = epoch
 
     def batch_loaded(self, epoch, step, block, t0):
         duration = time() - t0

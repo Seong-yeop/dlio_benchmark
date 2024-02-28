@@ -23,6 +23,7 @@ from src.data_generator.hdf5_generator import HDF5Generator
 from src.data_generator.npz_generator import NPZGenerator
 from src.data_generator.jpeg_generator import JPEGGenerator
 from src.data_generator.png_generator import PNGGenerator
+from src.data_generator.db_generator import DBGenerator
 
 
 
@@ -44,5 +45,8 @@ class GeneratorFactory(object):
             return JPEGGenerator()
         elif type == FormatType.PNG:
             return PNGGenerator()
+        elif type == FormatType.DB:
+            return DBGenerator()
+        
         else:
             raise Exception(str(ErrorCodes.EC1001))

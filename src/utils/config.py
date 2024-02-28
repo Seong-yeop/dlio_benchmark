@@ -48,7 +48,7 @@ class ConfigArguments:
     batch_size: int = 1 
     epochs: int = 1 
     seed_change_epoch: bool = True
-    generate_data: bool = False
+    generate_data: bool = True
     generate_only: bool = False
     data_folder: str = "./data/"
     output_folder: str = "./output"
@@ -235,6 +235,8 @@ def LoadConfig(args, config):
     if 'workflow' in config:
         if 'generate_data' in config['workflow']:
             args.generate_data = config['workflow']['generate_data']
+            # Data generation is always done before training
+            args.generate_data = True
         if not (('train' in config['workflow']) and config['workflow']['train']):
             args.generate_only = True
         else:

@@ -91,7 +91,7 @@ class FormatReader(ABC):
                 fullpaths = [self.storage.get_uri(os.path.join(self._args.data_folder, f"{dataset_type}", entry))
                                 for entry in filenames if entry.find(f'{self._args.format}')!=-1]
                 fullpaths = sorted(fullpaths)
-            assert(num_files <=len(fullpaths))
+            # assert(num_files <=len(fullpaths))
             if (num_files < len(fullpaths)):
                 logging.warning(f"Number of files in {os.path.join(self._args.data_folder, f'{dataset_type}')} ({len(fullpaths)}) is more than requested ({num_files}). A subset of files will be used ")
             self._file_list = fullpaths[:num_files]

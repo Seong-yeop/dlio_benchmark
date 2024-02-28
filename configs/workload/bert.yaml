@@ -3,7 +3,7 @@ model: bert
 framework: tensorflow
 
 workflow:
-  generate_data: False
+  generate_data: True
   train: True
   debug: False
   checkpoint: True
