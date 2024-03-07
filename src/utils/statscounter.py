@@ -233,15 +233,17 @@ class StatsCounter(object):
             f'{self.my_rank}_start': ts
         }
 
-    def end_read(self, epoch, read_total):
+    def end_read(self, epoch, read_total, read_time):
         ts = utcnow()
         duration = pd.to_datetime(ts) - pd.to_datetime(self.per_epoch_stats[epoch][f'read'][f'{self.my_rank}_start'])
-        self.read_time += duration.total_seconds()
+        # self.read_time += duration.total_seconds()
+        self.read_time += read_time
         duration = '{:.2f}'.format(duration.total_seconds())
 
         self.per_epoch_stats[epoch][f'read'][f'{self.my_rank}_end'] = ts
         self.per_epoch_stats[epoch][f'read'][f'{self.my_rank}_duration'] = duration
-        self.read_total += read_total
+        self.read_total = read_total
+        logging.info(f"{ts} Rank {self.my_rank} read {read_total} bytes in {read_time} s")
 
     def start_ckpt(self, epoch, block, steps_taken):
         if self.my_rank == 0:

@@ -55,6 +55,7 @@ class DBGenerator(DataGenerator):
                 # Serialize the data.
                 serialized = example.SerializeToString()
                 # Write the serialized data to the TFRecords file.
-                self._db.db_write(f"{out_path_spec}-{i}", serialized)
+                self._db.db_write(int(str(int(out_path_spec.split('/')[-1].replace('part', '').replace('.db', '').replace('of', '').replace('_', ''))) + str(i)), serialized)
+                # self._db.db_write(f"{out_path_spec.split('/')[-1].replace('part', '').replace('.db', '').replace('of', '').replace('_', '')}", serialized)
 
         random.seed()

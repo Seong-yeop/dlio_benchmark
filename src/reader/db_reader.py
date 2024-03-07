@@ -17,6 +17,7 @@ class DBReader(FormatReader):
         super().__init__(dataset_type)
         self._db = wrapper_db.DbWrapper.get_instance()
         self.db_read_total = 0
+        self.db_read_time = 0
     
     def _tf_parse_function(self, serialized):
         """
@@ -50,8 +51,14 @@ class DBReader(FormatReader):
         # print(self._db.dataset_key)
         
         dataset = []
+        
+        import pandas as pd
+        start = pd.to_datetime(utcnow())
+        
         for key in self._db.dataset_key:
             self.db_read_total += self._db.db_read(f"{key}", dataset)
+
+        self.db_read_time = (pd.to_datetime(utcnow()) - start).total_seconds()
 
         dataset = [element for element in dataset if element is not None]
 

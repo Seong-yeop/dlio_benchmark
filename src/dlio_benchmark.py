@@ -286,7 +286,7 @@ class DLIOBenchmark(object):
                 # Initialize the dataset
                 self.stats.start_read(epoch)
                 self.framework.get_reader(dataset_type=DatasetType.TRAIN).read(epoch)
-                self.stats.end_read(epoch, self.framework.get_reader(DatasetType.TRAIN).db_read_total)
+                self.stats.end_read(epoch, self.framework.get_reader(DatasetType.TRAIN).db_read_total, self.framework.get_reader(DatasetType.TRAIN).db_read_time)
                 steps = self._train(epoch)
                 self.stats.end_train(epoch, steps)
                 logging.debug(f"{utcnow()} Rank {self.my_rank} returned after {steps} steps.")

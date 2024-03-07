@@ -27,8 +27,8 @@ class DbHandle(ctypes.Structure):
 
 # Load the shared library
 rocksdb_lib = ctypes.CDLL('/home/csl/testbed/rocksdb/librocksdb.so')  
-multi_lib = ctypes.CDLL('/home/csl/testbed/new-multi-node-Dotori/bench/rocksdb_test/libmulti_rocksdb.so')  
-#multi_lib = ctypes.CDLL('/home/csl/testbed/new-multi-node-Dotori/bench/dotori_test/libmulti_dotori.so')  
+#multi_lib = ctypes.CDLL('/home/csl/testbed/new-multi-node-Dotori/bench/rocksdb_test/libmulti_rocksdb.so')  
+multi_lib = ctypes.CDLL('/home/csl/testbed/new-multi-node-Dotori/bench/dotori_test/libmulti_dotori.so')  
 
 libc = ctypes.CDLL('libc.so.6')  
 
@@ -83,8 +83,8 @@ class DbWrapper:
         size = len(data)//bs + 1
         docs = (Doc * size)()
         for i in range(size-1):
-            # key = f"{uri}-{i}"
-            key = f"{i}"
+            #key = f"{uri}-{i}"
+            key = f"c{i}"
 
             docs[i].id.buf = ctypes.c_char_p(key.encode('utf-8'))
             docs[i].id.size = len(key)
